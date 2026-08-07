@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>LinkChat</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <style>
   :root{
     --bg:#0a0d14;
@@ -34,7 +33,6 @@
   }
   .mono{font-family:'Consolas','SFMono-Regular',Menlo,monospace;}
 
-  /* ---------- TOPBAR ---------- */
   header{
     display:flex; align-items:center; gap:10px;
     padding:14px 18px;
@@ -60,7 +58,6 @@
   .status-pill.online .led{background:var(--ok); box-shadow:0 0 8px var(--ok);}
   .status-pill.online{color:var(--ok); border-color:rgba(61,220,151,0.3);}
 
-  /* ---------- LOBBY ---------- */
   #lobby{
     flex:1; display:flex; align-items:center; justify-content:center;
     padding:24px; overflow-y:auto;
@@ -122,7 +119,6 @@
   #lobby-msg.err{color:var(--err);}
   #lobby-msg.ok{color:var(--ok);}
 
-  /* ---------- CHAT ---------- */
   #chat{flex:1; display:none; flex-direction:column; min-height:0;}
   #messages{
     flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:10px;
@@ -162,6 +158,11 @@
     color:#0a0d14; cursor:pointer; display:flex; align-items:center; justify-content:center;
   }
   #sendBtn:hover{opacity:0.9;}
+  #leaveBtn{
+    background:var(--bg-elevated); border:1px solid var(--line);
+    color:var(--text-dim); width:46px; height:46px; border-radius:50%;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
 
   ::-webkit-scrollbar{width:6px;}
   ::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
@@ -178,15 +179,16 @@
 <div id="lobby">
   <div class="card">
     <h2>Conectar com alguém</h2>
-    <p class="sub">Compartilhe seu código com a outra pessoa, ou cole o código dela abaixo para entrar direto na conversa. Sem cadastro, sem servidor — a conversa vai direto de um dispositivo pro outro.</p>
+    <p class="sub">Crie uma sala e compartilhe o código com a outra pessoa, ou cole o código dela abaixo para entrar direto na conversa.</p>
 
     <div class="my-id-box">
-      <div class="label">Seu código</div>
+      <div class="label">Sua sala</div>
       <div class="id-row">
-        <div class="code mono" id="myId">gerando...</div>
+        <div class="code mono" id="myId">toque em criar</div>
         <button class="icon-btn" id="copyBtn" title="Copiar código">⧉</button>
       </div>
     </div>
+    <button class="primary" id="createBtn" style="background:var(--bg-elevated); color:var(--text); border:1px solid var(--line);">Criar nova sala</button>
 
     <div class="divider">ou entre com um código</div>
 
@@ -199,16 +201,36 @@
 <div id="chat">
   <div id="messages"></div>
   <div id="composer">
+    <button id="leaveBtn" title="Sair da sala">←</button>
     <input type="text" id="msgInput" placeholder="Digite uma mensagem..." autocomplete="off">
     <button id="sendBtn">➤</button>
   </div>
 </div>
 
-<script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, query, orderBy,
+    onSnapshot, serverTimestamp, doc, setDoc, getDoc
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBPu8k092E2szSImoMMgi7s6W_qjlBvv2A",
+    authDomain: "linkchat-b1007.firebaseapp.com",
+    projectId: "linkchat-b1007",
+    storageBucket: "linkchat-b1007.firebasestorage.app",
+    messagingSenderId: "435176237595",
+    appId: "1:435176237595:web:f1d8cdb4ba9e1cb53c26be"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
   const statusPill = document.getElementById('statusPill');
   const statusText = document.getElementById('statusText');
   const myIdEl = document.getElementById('myId');
   const copyBtn = document.getElementById('copyBtn');
+  const createBtn = document.getElementById('createBtn');
   const joinInput = document.getElementById('joinInput');
   const joinBtn = document.getElementById('joinBtn');
   const lobbyMsg = document.getElementById('lobby-msg');
@@ -217,12 +239,13 @@
   const messagesEl = document.getElementById('messages');
   const msgInput = document.getElementById('msgInput');
   const sendBtn = document.getElementById('sendBtn');
+  const leaveBtn = document.getElementById('leaveBtn');
 
-  let peer = null;
-  let conn = null;
+  const mySenderId = 'u-' + Math.random().toString(36).slice(2, 10);
+  let roomCode = null;
+  let unsubscribe = null;
 
-  function shortId(){
-    // gera um código curto e fácil de digitar, tipo "AB12-CD34"
+  function shortCode(){
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let s = '';
     for(let i=0;i<8;i++){
@@ -237,111 +260,108 @@
     statusPill.classList.toggle('online', online);
   }
 
-  function initPeer(){
-    const id = shortId();
-    peer = new Peer(id, {
-      debug:1,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' }
-        ]
-      }
-    });
-
-    peer.on('open', (id)=>{
-      myIdEl.textContent = id;
-    });
-
-    peer.on('connection', (c)=>{
-      conn = c;
-      showLobbyMsg('Alguém está tentando conectar...', '');
-      conn.on('open', ()=>{
-        setupConnection();
-      });
-    });
-
-    peer.on('error', (err)=>{
-      console.error(err);
-      if(err.type === 'peer-unavailable'){
-        showLobbyMsg('Código não encontrado. Confira se digitou certo e se a outra pessoa está com a página aberta.', 'err');
-        joinBtn.disabled = false;
-        joinBtn.textContent = 'Conectar';
-      } else if(err.type === 'unavailable-id'){
-        setTimeout(initPeer, 500);
-      }
-    });
-  }
-
   function showLobbyMsg(text, type){
     lobbyMsg.textContent = text;
     lobbyMsg.className = type || '';
   }
 
+  createBtn.addEventListener('click', async ()=>{
+    const code = shortCode();
+    createBtn.disabled = true;
+    createBtn.textContent = 'Criando...';
+    try{
+      await setDoc(doc(db, 'rooms', code), { createdAt: serverTimestamp() });
+      myIdEl.textContent = code;
+      entrarNaSala(code);
+      showLobbyMsg('Sala criada! Compartilhe o código acima.', 'ok');
+    }catch(e){
+      console.error(e);
+      showLobbyMsg('Erro ao criar sala. Verifique sua internet.', 'err');
+    }
+    createBtn.disabled = false;
+    createBtn.textContent = 'Criar nova sala';
+  });
+
   copyBtn.addEventListener('click', ()=>{
-    navigator.clipboard.writeText(myIdEl.textContent).then(()=>{
+    const codigo = myIdEl.textContent;
+    if(codigo === 'toque em criar') return;
+    navigator.clipboard.writeText(codigo).then(()=>{
       copyBtn.textContent = '✓';
       setTimeout(()=>copyBtn.textContent='⧉', 1200);
     });
   });
 
-  joinBtn.addEventListener('click', ()=>{
-    const targetId = joinInput.value.trim();
-    if(!targetId){ showLobbyMsg('Cole um código antes de conectar.', 'err'); return; }
+  joinBtn.addEventListener('click', async ()=>{
+    const targetCode = joinInput.value.trim();
+    if(!targetCode){ showLobbyMsg('Cole um código antes de conectar.', 'err'); return; }
     joinBtn.disabled = true;
     joinBtn.textContent = 'Conectando...';
-    showLobbyMsg('Tentando conectar... (pode levar até 20s em redes móveis)', '');
-
-    let jaConectou = false;
-    conn = peer.connect(targetId, {reliable:true});
-
-    const tempoLimite = setTimeout(()=>{
-      if(!jaConectou){
-        showLobbyMsg('Demorou demais. Verifique o código e tente de novo.', 'err');
+    showLobbyMsg('Verificando sala...', '');
+    try{
+      const roomRef = doc(db, 'rooms', targetCode);
+      const snap = await getDoc(roomRef);
+      if(!snap.exists()){
+        showLobbyMsg('Sala não encontrada. Confira o código.', 'err');
         joinBtn.disabled = false;
         joinBtn.textContent = 'Conectar';
-        if(conn) conn.close();
+        return;
       }
-    }, 20000);
-
-    conn.on('open', ()=>{
-      jaConectou = true;
-      clearTimeout(tempoLimite);
-      setupConnection();
-    });
-    conn.on('error', (e)=>{
-      clearTimeout(tempoLimite);
-      showLobbyMsg('Falha ao conectar. Tente de novo.', 'err');
+      entrarNaSala(targetCode);
+    }catch(e){
+      console.error(e);
+      showLobbyMsg('Erro ao conectar. Verifique sua internet.', 'err');
       joinBtn.disabled = false;
       joinBtn.textContent = 'Conectar';
-    });
+    }
   });
 
   joinInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') joinBtn.click(); });
 
-  function setupConnection(){
+  function entrarNaSala(code){
+    roomCode = code;
     lobby.style.display = 'none';
     chatEl.style.display = 'flex';
     setStatus(true, 'conectado');
-    addSystemMsg('Vocês estão conectados. A conversa é direta entre os dois dispositivos.');
+    messagesEl.innerHTML = '';
+    addSystemMsg('Você entrou na sala ' + code);
 
-    conn.on('data', (data)=>{
-      addBubble(data, 'them');
-    });
+    const messagesRef = collection(db, 'rooms', code, 'messages');
+    const q = query(messagesRef, orderBy('createdAt', 'asc'));
 
-    conn.on('close', ()=>{
-      setStatus(false, 'desconectado');
-      addSystemMsg('A outra pessoa saiu da conversa.');
+    unsubscribe = onSnapshot(q, (snapshot)=>{
+      messagesEl.querySelectorAll('.bubble.me, .bubble.them').forEach(b => b.remove());
+      snapshot.forEach((docSnap)=>{
+        const data = docSnap.data();
+        const who = data.sender === mySenderId ? 'me' : 'them';
+        addBubble(data.text, who, data.createdAt);
+      });
+    }, (error)=>{
+      console.error(error);
+      addSystemMsg('Conexão perdida. Verifique sua internet.');
     });
   }
 
-  function addBubble(text, who){
+  function sairDaSala(){
+    if(unsubscribe) unsubscribe();
+    roomCode = null;
+    chatEl.style.display = 'none';
+    lobby.style.display = 'flex';
+    setStatus(false, 'desconectado');
+    joinInput.value = '';
+    showLobbyMsg('', '');
+  }
+
+  leaveBtn.addEventListener('click', sairDaSala);
+
+  function addBubble(text, who, timestamp){
     const b = document.createElement('div');
     b.className = 'bubble ' + who;
-    const now = new Date();
-    const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    b.innerHTML = escapeHtml(text) + '<span class="time">'+time+'</span>';
+    let time = '';
+    if(timestamp && timestamp.toDate){
+      const d = timestamp.toDate();
+      time = d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+    }
+    b.innerHTML = escapeHtml(text) + (time ? '<span class="time">'+time+'</span>' : '');
     messagesEl.appendChild(b);
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
@@ -360,18 +380,25 @@
     return div.innerHTML;
   }
 
-  function sendMessage(){
+  async function sendMessage(){
     const text = msgInput.value.trim();
-    if(!text || !conn || !conn.open) return;
-    conn.send(text);
-    addBubble(text, 'me');
+    if(!text || !roomCode) return;
     msgInput.value = '';
+    try{
+      const messagesRef = collection(db, 'rooms', roomCode, 'messages');
+      await addDoc(messagesRef, {
+        text: text,
+        sender: mySenderId,
+        createdAt: serverTimestamp()
+      });
+    }catch(e){
+      console.error(e);
+      addSystemMsg('Falha ao enviar. Verifique sua internet.');
+    }
   }
 
   sendBtn.addEventListener('click', sendMessage);
   msgInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendMessage(); });
-
-  initPeer();
 </script>
 
 </body>
