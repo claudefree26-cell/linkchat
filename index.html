@@ -239,7 +239,30 @@
 
   function initPeer(){
     const id = shortId();
-    peer = new Peer(id, {debug:1});
+    peer = new Peer(id, {
+      debug:1,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          {
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          }
+        ]
+      }
+    });
 
     peer.on('open', (id)=>{
       myIdEl.textContent = id;
@@ -247,7 +270,10 @@
 
     peer.on('connection', (c)=>{
       conn = c;
-      setupConnection();
+      showLobbyMsg('Alguém está tentando conectar...', '');
+      conn.on('open', ()=>{
+        setupConnection();
+      });
     });
 
     peer.on('error', (err)=>{
@@ -279,10 +305,27 @@
     if(!targetId){ showLobbyMsg('Cole um código antes de conectar.', 'err'); return; }
     joinBtn.disabled = true;
     joinBtn.textContent = 'Conectando...';
-    showLobbyMsg('Tentando conectar...', '');
+    showLobbyMsg('Tentando conectar... (pode levar até 20s em redes móveis)', '');
+
+    let jaConectou = false;
     conn = peer.connect(targetId, {reliable:true});
-    conn.on('open', ()=>{ setupConnection(); });
+
+    const tempoLimite = setTimeout(()=>{
+      if(!jaConectou){
+        showLobbyMsg('Demorou demais. Verifique o código e tente de novo.', 'err');
+        joinBtn.disabled = false;
+        joinBtn.textContent = 'Conectar';
+        if(conn) conn.close();
+      }
+    }, 20000);
+
+    conn.on('open', ()=>{
+      jaConectou = true;
+      clearTimeout(tempoLimite);
+      setupConnection();
+    });
     conn.on('error', (e)=>{
+      clearTimeout(tempoLimite);
       showLobbyMsg('Falha ao conectar. Tente de novo.', 'err');
       joinBtn.disabled = false;
       joinBtn.textContent = 'Conectar';
