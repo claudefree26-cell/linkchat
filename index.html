@@ -806,7 +806,7 @@
     if(!temAlgo) return;
 
     minhasSalasList.innerHTML = '';
-    minhasSalas.forEach((sala)=>{
+    minhasSalas.forEach((sala, index)=>{
       const item = document.createElement('div');
       item.className = 'recent-room-item';
 
@@ -819,6 +819,13 @@
       const nomeSpan = document.createElement('span');
       nomeSpan.className = 'code mono';
       nomeSpan.textContent = sala.nome || sala.code;
+      if(index === 0){
+      const badgeRecente = document.createElement('span');
+      badgeRecente.textContent = 'recente';
+      badgeRecente.style.cssText = 'font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;flex-shrink:0;';
+      nomeRow.appendChild(badgeRecente);
+      }
+      
       nomeRow.appendChild(nomeSpan);
 
       const btnEditar = document.createElement('button');
