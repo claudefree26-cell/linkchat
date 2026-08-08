@@ -16,6 +16,9 @@
     --text-dim:#8890a6;
     --ok:#3ddc97;
     --err:#ff5c7a;
+    /* aparência personalizável pelo usuário (aba "Aparência") */
+    --panel-alpha:0.94;
+    --panel-blur:8px;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   html,body{height:100%;}
@@ -24,7 +27,9 @@
     background:
       radial-gradient(circle at 15% 0%, rgba(124,92,252,0.14), transparent 45%),
       radial-gradient(circle at 85% 100%, rgba(34,211,238,0.10), transparent 45%),
-      var(--bg);
+      rgba(10,13,20, var(--panel-alpha));
+    backdrop-filter: blur(var(--panel-blur));
+    -webkit-backdrop-filter: blur(var(--panel-blur));
     color:var(--text);
     height:100vh;
     display:flex;
@@ -48,7 +53,9 @@
   }
   .card{
     width:100%; max-width:420px;
-    background:var(--bg-panel);
+    background:rgba(16,20,31, var(--panel-alpha));
+    backdrop-filter: blur(var(--panel-blur));
+    -webkit-backdrop-filter: blur(var(--panel-blur));
     border:1px solid var(--line);
     border-radius:16px;
     padding:28px 26px;
@@ -109,7 +116,9 @@
     display:flex; align-items:center; justify-content:space-between;
     gap:0.5em; padding:0.5em 0.7em;
     border-bottom:1px solid var(--line);
-    background:rgba(16,20,31,0.5);
+    background:rgba(16,20,31, calc(var(--panel-alpha) * 0.7));
+    backdrop-filter: blur(var(--panel-blur));
+    -webkit-backdrop-filter: blur(var(--panel-blur));
     flex-shrink:0;
   }
   #roomCodeBox{
@@ -169,10 +178,10 @@
     line-height:1.4; word-wrap:break-word; white-space:pre-wrap;
   }
   .sender-name{
-    font-size:0.68rem;
+    font-size:0.85rem;
     font-weight:700;
-    margin-right:0.45em;
-    opacity:0.8;
+    margin-right:0.4em;
+    opacity:0.85;
     letter-spacing:0.2px;
   }
   .bubble.me .sender-name{color:rgba(10,13,20,0.65);}
@@ -198,7 +207,10 @@
     display:flex; gap:0.6em;
     padding:0.7em;
     border-top:1px solid var(--line);
-    background:rgba(16,20,31,0.6); flex-shrink:0;
+    background:rgba(16,20,31, calc(var(--panel-alpha) * 0.75));
+    backdrop-filter: blur(var(--panel-blur));
+    -webkit-backdrop-filter: blur(var(--panel-blur));
+    flex-shrink:0;
   }
   #msgInput{
     flex:1; background:var(--bg-elevated); border:1px solid var(--line);
@@ -231,6 +243,69 @@
   ::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
 
   .name-field{margin-bottom:14px;}
+
+  /* ---------- abas do lobby ---------- */
+  .tabs{
+    display:flex; gap:8px; margin-bottom:20px;
+  }
+  .tab-btn{
+    flex:1; background:var(--bg-elevated); border:1px solid var(--line);
+    color:var(--text-dim); padding:9px; border-radius:8px;
+    font-size:12.5px; font-weight:600; cursor:pointer; transition:0.15s;
+  }
+  .tab-btn.active{
+    color:var(--text); border-color:var(--accent1);
+    background:rgba(124,92,252,0.14);
+  }
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* ---------- salas recentes ---------- */
+  #recentRoomsSection{margin-top:20px;}
+  .recent-room-item{
+    display:flex; align-items:center; gap:8px;
+    background:var(--bg-elevated); border:1px solid var(--line);
+    border-radius:10px; padding:10px 12px; margin-bottom:8px;
+  }
+  .recent-room-item .code{
+    flex:1; font-size:12.5px; color:var(--text);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .recent-room-item button{
+    border:none; border-radius:7px; cursor:pointer; font-size:11.5px;
+    padding:6px 10px; font-weight:700;
+  }
+  .recent-room-item .btn-entrar{
+    background:linear-gradient(135deg,var(--accent1),var(--accent2));
+    color:#0a0d14;
+  }
+  .recent-room-item .btn-remover{
+    background:transparent; color:var(--text-dim); padding:6px 8px;
+  }
+
+  /* ---------- aba de aparência ---------- */
+  .appearance-field{margin-bottom:20px;}
+  .appearance-field label{
+    display:block; font-size:12px; color:var(--text-dim); margin-bottom:8px;
+  }
+  .color-row{display:flex; gap:10px;}
+  .color-row .color-item{flex:1;}
+  .color-item span{display:block; font-size:11px; color:var(--text-dim); margin-bottom:6px;}
+  input[type=color]{
+    width:100%; height:38px; border:1px solid var(--line); border-radius:8px;
+    background:var(--bg-elevated); cursor:pointer; padding:2px;
+  }
+  .range-row{display:flex; align-items:center; gap:10px;}
+  input[type=range]{
+    flex:1; accent-color:var(--accent1); cursor:pointer;
+  }
+  .range-value{font-size:12px; color:var(--text-dim); min-width:38px; text-align:right;}
+  #resetAparenciaBtn{
+    width:100%; margin-top:4px;
+    background:var(--bg-elevated); border:1px solid var(--line);
+    color:var(--text-dim); padding:10px; border-radius:10px;
+    font-size:12.5px; cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -243,20 +318,67 @@
 
 <div id="lobby">
   <div class="card">
-    <h2>Conectar com alguém</h2>
-    <p class="sub">Crie uma sala e compartilhe o código com a outra pessoa, ou cole o código dela abaixo para entrar direto na conversa.</p>
-
-    <div class="name-field">
-      <input type="text" id="nameInput" placeholder="Seu nome" autocomplete="off" maxlength="20">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="entrar" type="button">Entrar</button>
+      <button class="tab-btn" data-tab="aparencia" type="button">Aparência</button>
     </div>
 
-    <button class="primary" id="createBtn" style="background:var(--bg-elevated); color:var(--text); border:1px solid var(--line);">Criar nova sala</button>
+    <div class="tab-panel active" id="tabEntrar">
+      <p class="sub">Crie uma sala e compartilhe o código com a outra pessoa, ou cole o código dela abaixo para entrar direto na conversa.</p>
 
-    <div class="divider">ou entre com um código</div>
+      <div class="name-field">
+        <input type="text" id="nameInput" placeholder="Seu nome" autocomplete="off" maxlength="20">
+      </div>
 
-    <input type="text" id="joinInput" placeholder="Cole o código da outra pessoa aqui" class="mono" autocomplete="off">
-    <button class="primary" id="joinBtn">Conectar</button>
-    <div id="lobby-msg"></div>
+      <button class="primary" id="createBtn" style="background:var(--bg-elevated); color:var(--text); border:1px solid var(--line);">Criar nova sala</button>
+
+      <div class="divider">ou entre com um código</div>
+
+      <input type="text" id="joinInput" placeholder="Cole o código da outra pessoa aqui" class="mono" autocomplete="off">
+      <button class="primary" id="joinBtn">Conectar</button>
+      <div id="lobby-msg"></div>
+
+      <div id="recentRoomsSection" style="display:none;">
+        <div class="divider">salas recentes</div>
+        <div id="recentRoomsList"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tabAparencia">
+      <p class="sub">Personalize as cores e a transparência do painel. Fica salvo só neste aparelho.</p>
+
+      <div class="appearance-field">
+        <label>Cores do gradiente</label>
+        <div class="color-row">
+          <div class="color-item">
+            <span>Principal</span>
+            <input type="color" id="corPrincipal" value="#7c5cfc">
+          </div>
+          <div class="color-item">
+            <span>Secundária</span>
+            <input type="color" id="corSecundaria" value="#22d3ee">
+          </div>
+        </div>
+      </div>
+
+      <div class="appearance-field">
+        <label>Opacidade do fundo</label>
+        <div class="range-row">
+          <input type="range" id="opacidadeRange" min="40" max="100" step="1" value="94">
+          <span class="range-value" id="opacidadeValue">94%</span>
+        </div>
+      </div>
+
+      <div class="appearance-field">
+        <label>Nível de borrão</label>
+        <div class="range-row">
+          <input type="range" id="borraoRange" min="0" max="24" step="1" value="8">
+          <span class="range-value" id="borraoValue">8px</span>
+        </div>
+      </div>
+
+      <button id="resetAparenciaBtn" type="button">Restaurar padrão</button>
+    </div>
   </div>
 </div>
 
@@ -315,6 +437,23 @@
   const msgInput = document.getElementById('msgInput');
   const sendBtn = document.getElementById('sendBtn');
   const leaveBtn = document.getElementById('leaveBtn');
+
+  // abas do lobby
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabPanels = { entrar: document.getElementById('tabEntrar'), aparencia: document.getElementById('tabAparencia') };
+
+  // salas recentes
+  const recentRoomsSection = document.getElementById('recentRoomsSection');
+  const recentRoomsList = document.getElementById('recentRoomsList');
+
+  // aparência
+  const corPrincipalInput = document.getElementById('corPrincipal');
+  const corSecundariaInput = document.getElementById('corSecundaria');
+  const opacidadeRange = document.getElementById('opacidadeRange');
+  const opacidadeValue = document.getElementById('opacidadeValue');
+  const borraoRange = document.getElementById('borraoRange');
+  const borraoValue = document.getElementById('borraoValue');
+  const resetAparenciaBtn = document.getElementById('resetAparenciaBtn');
 
   const mySenderId = 'u-' + Math.random().toString(36).slice(2, 10);
   let roomCode = null;
@@ -400,6 +539,151 @@
     }
   }
 
+  // ---------- abas do lobby ----------
+  tabBtns.forEach((btn)=>{
+    btn.addEventListener('click', ()=>{
+      tabBtns.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      Object.values(tabPanels).forEach(p=>p.classList.remove('active'));
+      tabPanels[btn.dataset.tab].classList.add('active');
+    });
+  });
+
+  // ---------- aparência personalizável (salva só neste aparelho) ----------
+  const APARENCIA_PADRAO = { accent1:'#7c5cfc', accent2:'#22d3ee', opacidade:94, borrao:8 };
+  const CHAVE_APARENCIA = 'linkchat_aparencia';
+
+  function carregarAparencia(){
+    try{
+      const salvo = localStorage.getItem(CHAVE_APARENCIA);
+      if(salvo) return Object.assign({}, APARENCIA_PADRAO, JSON.parse(salvo));
+    }catch(e){ console.error(e); }
+    return Object.assign({}, APARENCIA_PADRAO);
+  }
+
+  function salvarAparencia(config){
+    try{ localStorage.setItem(CHAVE_APARENCIA, JSON.stringify(config)); }catch(e){ console.error(e); }
+  }
+
+  function aplicarAparencia(config){
+    document.documentElement.style.setProperty('--accent1', config.accent1);
+    document.documentElement.style.setProperty('--accent2', config.accent2);
+    document.documentElement.style.setProperty('--panel-alpha', (config.opacidade / 100).toFixed(2));
+    document.documentElement.style.setProperty('--panel-blur', config.borrao + 'px');
+
+    corPrincipalInput.value = config.accent1;
+    corSecundariaInput.value = config.accent2;
+    opacidadeRange.value = config.opacidade;
+    opacidadeValue.textContent = config.opacidade + '%';
+    borraoRange.value = config.borrao;
+    borraoValue.textContent = config.borrao + 'px';
+
+    // avisa o app Android pra deixar o fundo nativo do painel condizente
+    // (deixa o painel realmente translúcido, não só o conteúdo da web)
+    if(window.Android && typeof window.Android.onOpacidadeAlterada === 'function'){
+      try{ window.Android.onOpacidadeAlterada(config.opacidade); }catch(e){}
+    }
+  }
+
+  let aparenciaAtual = carregarAparencia();
+  aplicarAparencia(aparenciaAtual);
+
+  function atualizarAparencia(campo, valor){
+    aparenciaAtual[campo] = valor;
+    aplicarAparencia(aparenciaAtual);
+    salvarAparencia(aparenciaAtual);
+  }
+
+  corPrincipalInput.addEventListener('input', ()=> atualizarAparencia('accent1', corPrincipalInput.value));
+  corSecundariaInput.addEventListener('input', ()=> atualizarAparencia('accent2', corSecundariaInput.value));
+  opacidadeRange.addEventListener('input', ()=> atualizarAparencia('opacidade', Number(opacidadeRange.value)));
+  borraoRange.addEventListener('input', ()=> atualizarAparencia('borrao', Number(borraoRange.value)));
+  resetAparenciaBtn.addEventListener('click', ()=>{
+    aparenciaAtual = Object.assign({}, APARENCIA_PADRAO);
+    aplicarAparencia(aparenciaAtual);
+    salvarAparencia(aparenciaAtual);
+  });
+
+  // ---------- salas recentes (histórico local, sem senha — o código já é a chave) ----------
+  const CHAVE_SALAS = 'linkchat_salas_recentes';
+  const MAX_SALAS_RECENTES = 8;
+
+  function carregarSalasRecentes(){
+    try{
+      const salvo = localStorage.getItem(CHAVE_SALAS);
+      return salvo ? JSON.parse(salvo) : [];
+    }catch(e){ return []; }
+  }
+
+  function salvarSalaRecente(code){
+    let salas = carregarSalasRecentes().filter(s => s.code !== code);
+    salas.unshift({ code: code, ultimaVez: Date.now() });
+    salas = salas.slice(0, MAX_SALAS_RECENTES);
+    try{ localStorage.setItem(CHAVE_SALAS, JSON.stringify(salas)); }catch(e){ console.error(e); }
+    renderizarSalasRecentes();
+  }
+
+  function removerSalaRecente(code){
+    const salas = carregarSalasRecentes().filter(s => s.code !== code);
+    try{ localStorage.setItem(CHAVE_SALAS, JSON.stringify(salas)); }catch(e){ console.error(e); }
+    renderizarSalasRecentes();
+  }
+
+  function renderizarSalasRecentes(){
+    const salas = carregarSalasRecentes();
+    if(salas.length === 0){
+      recentRoomsSection.style.display = 'none';
+      recentRoomsList.innerHTML = '';
+      return;
+    }
+    recentRoomsSection.style.display = 'block';
+    recentRoomsList.innerHTML = '';
+    salas.forEach((sala)=>{
+      const item = document.createElement('div');
+      item.className = 'recent-room-item';
+
+      const codeSpan = document.createElement('span');
+      codeSpan.className = 'code mono';
+      codeSpan.textContent = sala.code;
+      item.appendChild(codeSpan);
+
+      const btnEntrar = document.createElement('button');
+      btnEntrar.className = 'btn-entrar';
+      btnEntrar.textContent = 'Entrar';
+      btnEntrar.addEventListener('click', ()=> entrarPorSalaRecente(sala.code));
+      item.appendChild(btnEntrar);
+
+      const btnRemover = document.createElement('button');
+      btnRemover.className = 'btn-remover';
+      btnRemover.textContent = '✕';
+      btnRemover.title = 'Remover da lista';
+      btnRemover.addEventListener('click', ()=> removerSalaRecente(sala.code));
+      item.appendChild(btnRemover);
+
+      recentRoomsList.appendChild(item);
+    });
+  }
+
+  async function entrarPorSalaRecente(code){
+    if(!nomeValido()) return;
+    showLobbyMsg('Verificando sala...', '');
+    try{
+      const snap = await getDoc(doc(db, 'rooms', code));
+      if(!snap.exists()){
+        showLobbyMsg('Essa sala não existe mais.', 'err');
+        removerSalaRecente(code);
+        return;
+      }
+      salvarSalaRecente(code);
+      entrarNaSala(code);
+    }catch(e){
+      console.error(e);
+      showLobbyMsg('Erro ao conectar. Verifique sua internet.', 'err');
+    }
+  }
+
+  renderizarSalasRecentes();
+
   function setStatus(online, text){
     statusDot.classList.toggle('online', online);
     statusDot.title = text; // aparece só ao passar o mouse/dedo por cima
@@ -428,6 +712,7 @@
     createBtn.textContent = 'Criando...';
     try{
       await setDoc(doc(db, 'rooms', code), { createdAt: serverTimestamp() });
+      salvarSalaRecente(code);
       entrarNaSala(code);
       showLobbyMsg('Sala criada!', 'ok');
     }catch(e){
@@ -464,6 +749,7 @@
         joinBtn.textContent = 'Conectar';
         return;
       }
+      salvarSalaRecente(targetCode);
       entrarNaSala(targetCode);
     }catch(e){
       console.error(e);
