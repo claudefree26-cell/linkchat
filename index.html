@@ -6,11 +6,11 @@
 <title>LinkChat</title>
 <style>
   :root{
-    --bg:#0d0f13;
-    --bg-rgb:13,15,19;
-    --bg-panel:#10131a;
-    --bg-elevated:#161a23;
-    --line:#232833;
+    --bg:#000000;
+    --bg-rgb:0,0,0;
+    --bg-panel:#000000;
+    --bg-elevated:#0a0a0a;
+    --line:#1f1f1f;
     --accent:#7c5cfc;
     --accent-rgb:124,92,252;
     --text:#e7e9f0;
@@ -51,7 +51,7 @@
   }
   .card{
     width:100%; max-width:420px;
-    background:rgba(16,19,26, var(--panel-alpha));
+    background:rgba(var(--bg-rgb), var(--panel-alpha));
     backdrop-filter: blur(var(--panel-blur));
     -webkit-backdrop-filter: blur(var(--panel-blur));
     border:1px solid var(--line);
@@ -113,7 +113,7 @@
     display:flex; align-items:center; justify-content:space-between;
     gap:0.5em; padding:0.5em 0.7em;
     border-bottom:1px solid var(--line);
-    background:rgba(16,19,26, calc(var(--panel-alpha) * 0.7));
+    background:rgba(var(--bg-rgb), calc(var(--panel-alpha) * 0.7));
     backdrop-filter: blur(var(--panel-blur));
     -webkit-backdrop-filter: blur(var(--panel-blur));
     flex-shrink:0;
@@ -216,7 +216,7 @@
     display:flex; gap:0.6em;
     padding:0.7em;
     border-top:1px solid var(--line);
-    background:rgba(16,19,26, calc(var(--panel-alpha) * 0.75));
+    background:rgba(var(--bg-rgb), calc(var(--panel-alpha) * 0.75));
     backdrop-filter: blur(var(--panel-blur));
     -webkit-backdrop-filter: blur(var(--panel-blur));
     flex-shrink:0;
