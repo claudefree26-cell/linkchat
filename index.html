@@ -12,6 +12,8 @@
     --line:#232a3d;
     --accent1:#7c5cfc;
     --accent2:#22d3ee;
+    --accent1-rgb:124,92,252;
+    --accent2-rgb:34,211,238;
     --text:#e7e9f0;
     --text-dim:#8890a6;
     --ok:#3ddc97;
@@ -25,8 +27,8 @@
   body{
     font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
     background:
-      radial-gradient(circle at 15% 0%, rgba(124,92,252,0.14), transparent 45%),
-      radial-gradient(circle at 85% 100%, rgba(34,211,238,0.10), transparent 45%),
+      radial-gradient(circle at 15% 0%, rgba(var(--accent1-rgb),0.14), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(var(--accent2-rgb),0.10), transparent 45%),
       rgba(10,13,20, var(--panel-alpha));
     backdrop-filter: blur(var(--panel-blur));
     -webkit-backdrop-filter: blur(var(--panel-blur));
@@ -44,7 +46,7 @@
   .logo-dot{
     width:10px;height:10px;border-radius:50%;
     background:linear-gradient(135deg,var(--accent1),var(--accent2));
-    box-shadow:0 0 12px rgba(124,92,252,0.7);
+    box-shadow:0 0 12px rgba(var(--accent1-rgb),0.7);
   }
 
   #lobby{
@@ -122,10 +124,23 @@
     flex-shrink:0;
   }
   #roomCodeBox{
-    display:flex; align-items:center; gap:0.4em; min-width:0;
+    display:flex; flex-direction:column; gap:1px; min-width:0; flex:1;
+  }
+  #roomNameLine, #roomCodeLine{
+    display:flex; align-items:center; gap:0.35em; min-width:0;
+  }
+  #roomNameText{
+    font-size:0.85rem; font-weight:700; color:var(--text);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:10em;
+  }
+  #roomNameInputEdit{
+    font-size:0.85rem; font-weight:700; color:var(--text);
+    background:var(--bg-elevated); border:1px solid var(--accent1);
+    border-radius:0.4em; padding:0.1em 0.4em; outline:none;
+    max-width:10em; min-width:6em;
   }
   #roomCodeText{
-    font-size:0.72rem; color:var(--text-dim);
+    font-size:0.68rem; color:var(--text-dim);
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:9em;
   }
   .copy-mini{
@@ -255,7 +270,7 @@
   }
   .tab-btn.active{
     color:var(--text); border-color:var(--accent1);
-    background:rgba(124,92,252,0.14);
+    background:rgba(var(--accent1-rgb),0.14);
   }
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
@@ -344,6 +359,10 @@
         <input type="text" id="nameInput" placeholder="Seu nome" autocomplete="off" maxlength="20">
       </div>
 
+      <div class="name-field">
+        <input type="text" id="roomNameInput" placeholder="Nome da sala (opcional)" autocomplete="off" maxlength="24">
+      </div>
+
       <button class="primary" id="createBtn" style="background:var(--bg-elevated); color:var(--text); border:1px solid var(--line);">Criar nova sala</button>
 
       <div class="divider">ou entre com um código</div>
@@ -402,8 +421,14 @@
 <div id="chat">
   <div id="chatTopBar">
     <div id="roomCodeBox">
-      <span id="roomCodeText" class="mono"></span>
-      <button id="copyRoomBtn" class="copy-mini" title="Copiar código">⧉</button>
+      <div id="roomNameLine">
+        <span id="roomNameText" class="mono"></span>
+        <button id="editRoomNameBtn" class="copy-mini" title="Editar nome da sala">✎</button>
+      </div>
+      <div id="roomCodeLine">
+        <span id="roomCodeText" class="mono"></span>
+        <button id="copyRoomBtn" class="copy-mini" title="Copiar código">⧉</button>
+      </div>
     </div>
     <div id="topInfo">
       <span id="statusDot"></span>
@@ -442,6 +467,9 @@
   const onlineCountEl = document.getElementById('onlineCount');
   const typingIndicatorEl = document.getElementById('typingIndicator');
   const nameInput = document.getElementById('nameInput');
+  const roomNameInput = document.getElementById('roomNameInput');
+  const roomNameText = document.getElementById('roomNameText');
+  const editRoomNameBtn = document.getElementById('editRoomNameBtn');
   const roomCodeText = document.getElementById('roomCodeText');
   const copyRoomBtn = document.getElementById('copyRoomBtn');
   const createBtn = document.getElementById('createBtn');
@@ -477,9 +505,11 @@
 
   const mySenderId = 'u-' + Math.random().toString(36).slice(2, 10);
   let roomCode = null;
+  let roomNomeAtual = '';
   let unsubscribe = null;
   let unsubscribePresence = null;
   let unsubscribeTyping = null;
+  let unsubscribeRoomDoc = null;
   let presencaInterval = null;
   let typingTimeout = null;
   let meuNome = '';
@@ -573,10 +603,20 @@
   const APARENCIA_PADRAO = { accent1:'#7c5cfc', accent2:'#22d3ee', opacidade:94, borrao:8 };
   const CHAVE_APARENCIA = 'linkchat_aparencia';
   const PALETA_CORES = [
-    '#7c5cfc', '#22d3ee', '#ff5c7a', '#3ddc97',
-    '#fbbf24', '#f97316', '#ec4899', '#38bdf8',
-    '#a78bfa', '#34d399', '#f43f5e', '#818cf8'
+    '#ffffff', '#000000', '#94a3b8',
+    '#ef4444', '#f97316', '#f59e0b', '#eab308',
+    '#84cc16', '#22c55e', '#10b981', '#14b8a6',
+    '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
+    '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e'
   ];
+
+  function hexParaRgb(hex){
+    const limpo = hex.replace('#', '');
+    const r = parseInt(limpo.substring(0,2), 16);
+    const g = parseInt(limpo.substring(2,4), 16);
+    const b = parseInt(limpo.substring(4,6), 16);
+    return r + ',' + g + ',' + b;
+  }
 
   function montarPaleta(container, aoEscolher){
     container.innerHTML = '';
@@ -617,6 +657,8 @@
   function aplicarAparencia(config){
     document.documentElement.style.setProperty('--accent1', config.accent1);
     document.documentElement.style.setProperty('--accent2', config.accent2);
+    document.documentElement.style.setProperty('--accent1-rgb', hexParaRgb(config.accent1));
+    document.documentElement.style.setProperty('--accent2-rgb', hexParaRgb(config.accent2));
     document.documentElement.style.setProperty('--panel-alpha', (config.opacidade / 100).toFixed(2));
     document.documentElement.style.setProperty('--panel-blur', config.borrao + 'px');
 
@@ -685,9 +727,11 @@
     }catch(e){ return []; }
   }
 
-  function salvarSalaRecente(code){
+  function salvarSalaRecente(code, nome){
     let salas = carregarSalasRecentes().filter(s => s.code !== code);
-    salas.unshift({ code: code, ultimaVez: Date.now() });
+    const anterior = carregarSalasRecentes().find(s => s.code === code);
+    const nomeFinal = (nome !== undefined) ? nome : ((anterior && anterior.nome) || '');
+    salas.unshift({ code: code, nome: nomeFinal, ultimaVez: Date.now() });
     salas = salas.slice(0, MAX_SALAS_RECENTES);
     try{ localStorage.setItem(CHAVE_SALAS, JSON.stringify(salas)); }catch(e){ console.error(e); }
     renderizarListaSalas();
@@ -716,10 +760,27 @@
       const item = document.createElement('div');
       item.className = 'recent-room-item';
 
-      const codeSpan = document.createElement('span');
-      codeSpan.className = 'code mono';
-      codeSpan.textContent = sala.code;
-      item.appendChild(codeSpan);
+      const infoWrap = document.createElement('div');
+      infoWrap.style.flex = '1';
+      infoWrap.style.minWidth = '0';
+
+      const nomeSpan = document.createElement('span');
+      nomeSpan.className = 'code mono';
+      nomeSpan.style.display = 'block';
+      nomeSpan.textContent = sala.nome || sala.code;
+      infoWrap.appendChild(nomeSpan);
+
+      if(sala.nome){
+        const codigoSpan = document.createElement('span');
+        codigoSpan.className = 'mono';
+        codigoSpan.style.display = 'block';
+        codigoSpan.style.fontSize = '10px';
+        codigoSpan.style.color = 'var(--text-dim)';
+        codigoSpan.textContent = sala.code;
+        infoWrap.appendChild(codigoSpan);
+      }
+
+      item.appendChild(infoWrap);
 
       const btnEntrar = document.createElement('button');
       btnEntrar.className = 'btn-entrar';
@@ -748,13 +809,14 @@
         removerSalaRecente(code);
         return;
       }
-      salvarSalaRecente(code);
+      salvarSalaRecente(code, snap.data().nome);
       entrarNaSala(code);
     }catch(e){
       console.error(e);
       showLobbyMsg('Erro ao conectar. Verifique sua internet.', 'err');
     }
   }
+
 
   renderizarListaSalas();
 
@@ -783,11 +845,12 @@
   createBtn.addEventListener('click', async ()=>{
     if(!nomeValido()) return;
     const code = shortCode();
+    const nomeDaSala = roomNameInput.value.trim();
     createBtn.disabled = true;
     createBtn.textContent = 'Criando...';
     try{
-      await setDoc(doc(db, 'rooms', code), { createdAt: serverTimestamp() });
-      salvarSalaRecente(code);
+      await setDoc(doc(db, 'rooms', code), { createdAt: serverTimestamp(), nome: nomeDaSala || '' });
+      salvarSalaRecente(code, nomeDaSala);
       entrarNaSala(code);
       showLobbyMsg('Sala criada!', 'ok');
     }catch(e){
@@ -808,6 +871,51 @@
     });
   });
 
+  // ---------- editar o nome da sala direto no cabeçalho do chat ----------
+  function iniciarEdicaoNomeSala(){
+    if(!roomCode) return;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'roomNameInputEdit';
+    input.maxLength = 24;
+    input.value = roomNomeAtual;
+    input.placeholder = roomCode;
+
+    roomNameText.replaceWith(input);
+    editRoomNameBtn.style.display = 'none';
+    input.focus();
+    input.select();
+
+    let jaSalvou = false;
+    function confirmarEdicao(){
+      if(jaSalvou) return;
+      jaSalvou = true;
+      salvarNomeDaSala(input.value.trim());
+      input.replaceWith(roomNameText);
+      editRoomNameBtn.style.display = '';
+    }
+
+    input.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter') confirmarEdicao();
+    });
+    input.addEventListener('blur', confirmarEdicao);
+  }
+
+  async function salvarNomeDaSala(novoNome){
+    if(!roomCode) return;
+    try{
+      await setDoc(doc(db, 'rooms', roomCode), { nome: novoNome }, { merge: true });
+      roomNomeAtual = novoNome;
+      roomNameText.textContent = novoNome || roomCode;
+      salvarSalaRecente(roomCode, novoNome);
+    }catch(e){
+      console.error(e);
+      addSystemMsg('Não foi possível salvar o nome da sala. Verifique sua internet.');
+    }
+  }
+
+  editRoomNameBtn.addEventListener('click', iniciarEdicaoNomeSala);
+
   joinBtn.addEventListener('click', async ()=>{
     if(!nomeValido()) return;
     const targetCode = joinInput.value.trim();
@@ -824,7 +932,7 @@
         joinBtn.textContent = 'Conectar';
         return;
       }
-      salvarSalaRecente(targetCode);
+      salvarSalaRecente(targetCode, snap.data().nome);
       entrarNaSala(targetCode);
     }catch(e){
       console.error(e);
@@ -841,10 +949,21 @@
     lobby.style.display = 'none';
     chatEl.style.display = 'flex';
     roomCodeText.textContent = code;
+    roomNameText.textContent = code;
+    roomNameInput.value = '';
     setStatus(true, 'conectado');
     messagesEl.innerHTML = '';
     addSystemMsg('Você entrou na sala ' + code);
     avisarAndroidEntrouSala(code);
+
+    // acompanha o nome da sala em tempo real (reflete edições feitas por
+    // qualquer uma das duas pessoas na conversa)
+    unsubscribeRoomDoc = onSnapshot(doc(db, 'rooms', code), (snap)=>{
+      const nome = snap.exists() ? (snap.data().nome || '') : '';
+      roomNomeAtual = nome;
+      roomNameText.textContent = nome || code;
+      salvarSalaRecente(code, nome);
+    });
 
     const messagesRef = collection(db, 'rooms', code, 'messages');
     const q = query(messagesRef, orderBy('createdAt', 'asc'));
@@ -912,6 +1031,7 @@
     if(unsubscribe) unsubscribe();
     if(unsubscribePresence) unsubscribePresence();
     if(unsubscribeTyping) unsubscribeTyping();
+    if(unsubscribeRoomDoc) unsubscribeRoomDoc();
     if(presencaInterval) clearInterval(presencaInterval);
     clearTimeout(typingTimeout);
     if(codigoSaindo){
@@ -919,6 +1039,7 @@
       deleteDoc(doc(db, 'rooms', codigoSaindo, 'typing', mySenderId)).catch(()=>{});
     }
     roomCode = null;
+    roomNomeAtual = '';
     chatEl.style.display = 'none';
     lobby.style.display = 'flex';
     setStatus(false, 'desconectado');
