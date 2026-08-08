@@ -275,14 +275,11 @@
     flex:1; font-size:12.5px; color:var(--text);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  .recent-room-item .quando{
-    font-size:10px; color:var(--text-dim); margin-right:4px; flex-shrink:0;
-  }
   .recent-room-item button{
     border:none; border-radius:7px; cursor:pointer; font-size:11.5px;
     padding:6px 10px; font-weight:700; flex-shrink:0;
   }
-  .recent-room-item .btn-entrar, .recent-room-item .btn-usar{
+  .recent-room-item .btn-entrar{
     background:linear-gradient(135deg,var(--accent1),var(--accent2));
     color:#0a0d14;
   }
@@ -361,10 +358,6 @@
           <div class="room-subheader">Minhas salas</div>
           <div id="minhasSalasList"></div>
         </div>
-        <div id="outrasSalasWrap" style="display:none;">
-          <div class="room-subheader">Outras salas</div>
-          <div id="outrasSalasList"></div>
-        </div>
       </div>
     </div>
 
@@ -429,7 +422,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getFirestore, collection, addDoc, query, orderBy, limit,
+    getFirestore, collection, addDoc, query, orderBy,
     onSnapshot, serverTimestamp, doc, setDoc, getDoc, deleteDoc
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
@@ -470,8 +463,6 @@
   const recentRoomsSection = document.getElementById('recentRoomsSection');
   const minhasSalasWrap = document.getElementById('minhasSalasWrap');
   const minhasSalasList = document.getElementById('minhasSalasList');
-  const outrasSalasWrap = document.getElementById('outrasSalasWrap');
-  const outrasSalasList = document.getElementById('outrasSalasList');
 
   // aparência
   const corPrincipalSwatches = document.getElementById('corPrincipalSwatches');
@@ -708,33 +699,18 @@
     renderizarListaSalas();
   }
 
-  // ---------- todas as salas (pública, ao vivo via Firestore) ----------
-  // qualquer sala criada por qualquer pessoa aparece aqui pra todo mundo.
-  // entrar continua exigindo o código: clicar só preenche o campo "Conectar",
-  // não entra sozinho.
-  let todasSalasPublicas = [];
-
-  function formatarQuando(timestampMillis){
-    if(!timestampMillis) return '';
-    const diffMin = Math.max(0, Math.round((Date.now() - timestampMillis) / 60000));
-    if(diffMin < 1) return 'agora';
-    if(diffMin < 60) return diffMin + 'min';
-    const diffH = Math.round(diffMin / 60);
-    if(diffH < 24) return diffH + 'h';
-    return Math.round(diffH / 24) + 'd';
-  }
-
+  // ---------- minhas salas ----------
+  // por segurança, só existe a lista das salas que a própria pessoa criou ou
+  // entrou (salva localmente). Não há mais lista pública de todas as salas —
+  // entrar numa sala exige que alguém te repasse o código.
   function renderizarListaSalas(){
     const minhasSalas = carregarSalasRecentes();
-    const codigosMeus = new Set(minhasSalas.map(s => s.code));
-    const outrasSalas = todasSalasPublicas.filter(s => !codigosMeus.has(s.code));
 
-    const temAlgo = minhasSalas.length > 0 || outrasSalas.length > 0;
+    const temAlgo = minhasSalas.length > 0;
     recentRoomsSection.style.display = temAlgo ? 'block' : 'none';
+    minhasSalasWrap.style.display = temAlgo ? 'block' : 'none';
     if(!temAlgo) return;
 
-    // minhas salas — já conheço o código, entra direto
-    minhasSalasWrap.style.display = minhasSalas.length ? 'block' : 'none';
     minhasSalasList.innerHTML = '';
     minhasSalas.forEach((sala)=>{
       const item = document.createElement('div');
@@ -760,54 +736,7 @@
 
       minhasSalasList.appendChild(item);
     });
-
-    // outras salas — públicas, mas precisa confirmar com o código pra entrar
-    outrasSalasWrap.style.display = outrasSalas.length ? 'block' : 'none';
-    outrasSalasList.innerHTML = '';
-    outrasSalas.forEach((sala)=>{
-      const item = document.createElement('div');
-      item.className = 'recent-room-item';
-
-      const codeSpan = document.createElement('span');
-      codeSpan.className = 'code mono';
-      codeSpan.textContent = sala.code;
-      item.appendChild(codeSpan);
-
-      const quandoSpan = document.createElement('span');
-      quandoSpan.className = 'quando';
-      quandoSpan.textContent = formatarQuando(sala.criadaEm);
-      item.appendChild(quandoSpan);
-
-      const btnUsar = document.createElement('button');
-      btnUsar.className = 'btn-usar';
-      btnUsar.textContent = 'Usar código';
-      btnUsar.addEventListener('click', ()=>{
-        joinInput.value = sala.code;
-        joinInput.focus();
-        showLobbyMsg('Código preenchido. Toque em "Conectar" pra entrar.', '');
-      });
-      item.appendChild(btnUsar);
-
-      outrasSalasList.appendChild(item);
-    });
   }
-
-  // escuta a coleção de salas em tempo real — assim que alguém cria uma sala
-  // nova, ela aparece pra todo mundo automaticamente
-  const salasPublicasQuery = query(collection(db, 'rooms'), orderBy('createdAt', 'desc'), limit(30));
-  onSnapshot(salasPublicasQuery, (snap)=>{
-    todasSalasPublicas = [];
-    snap.forEach((d)=>{
-      const data = d.data();
-      todasSalasPublicas.push({
-        code: d.id,
-        criadaEm: data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : null
-      });
-    });
-    renderizarListaSalas();
-  }, (error)=>{
-    console.error(error);
-  });
 
   async function entrarPorSalaRecente(code){
     if(!nomeValido()) return;
