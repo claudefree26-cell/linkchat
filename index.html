@@ -669,6 +669,20 @@
     salvarAparencia(aparenciaAtual);
   });
 
+  // ---------- nome salvo (pra não precisar digitar de novo toda vez) ----------
+  const CHAVE_NOME = 'linkchat_nome';
+
+  function carregarNomeSalvo(){
+    try{ return localStorage.getItem(CHAVE_NOME) || ''; }catch(e){ return ''; }
+  }
+
+  function salvarNome(nome){
+    try{ localStorage.setItem(CHAVE_NOME, nome); }catch(e){ console.error(e); }
+  }
+
+  nameInput.value = carregarNomeSalvo();
+  nameInput.addEventListener('input', ()=> salvarNome(nameInput.value.trim()));
+
   // ---------- minhas salas (histórico local — código já é a chave, sem senha) ----------
   const CHAVE_SALAS = 'linkchat_salas_recentes';
   const MAX_SALAS_RECENTES = 8;
@@ -833,6 +847,7 @@
       return false;
     }
     meuNome = nome;
+    salvarNome(nome);
     return true;
   }
 
