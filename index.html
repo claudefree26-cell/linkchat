@@ -260,8 +260,12 @@
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
 
-  /* ---------- salas recentes ---------- */
+  /* ---------- salas (minhas / outras) ---------- */
   #recentRoomsSection{margin-top:20px;}
+  .room-subheader{
+    font-size:10.5px; text-transform:uppercase; letter-spacing:0.8px;
+    color:var(--text-dim); margin:12px 0 8px; font-weight:700;
+  }
   .recent-room-item{
     display:flex; align-items:center; gap:8px;
     background:var(--bg-elevated); border:1px solid var(--line);
@@ -271,11 +275,14 @@
     flex:1; font-size:12.5px; color:var(--text);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
+  .recent-room-item .quando{
+    font-size:10px; color:var(--text-dim); margin-right:4px; flex-shrink:0;
+  }
   .recent-room-item button{
     border:none; border-radius:7px; cursor:pointer; font-size:11.5px;
-    padding:6px 10px; font-weight:700;
+    padding:6px 10px; font-weight:700; flex-shrink:0;
   }
-  .recent-room-item .btn-entrar{
+  .recent-room-item .btn-entrar, .recent-room-item .btn-usar{
     background:linear-gradient(135deg,var(--accent1),var(--accent2));
     color:#0a0d14;
   }
@@ -288,13 +295,23 @@
   .appearance-field label{
     display:block; font-size:12px; color:var(--text-dim); margin-bottom:8px;
   }
-  .color-row{display:flex; gap:10px;}
-  .color-row .color-item{flex:1;}
-  .color-item span{display:block; font-size:11px; color:var(--text-dim); margin-bottom:6px;}
-  input[type=color]{
-    width:100%; height:38px; border:1px solid var(--line); border-radius:8px;
-    background:var(--bg-elevated); cursor:pointer; padding:2px;
+  .color-item span{display:block; font-size:11px; color:var(--text-dim); margin-bottom:8px;}
+  .color-swatches{display:flex; flex-wrap:wrap; gap:9px; margin-bottom:8px;}
+  .swatch{
+    width:30px; height:30px; border-radius:50%; flex-shrink:0;
+    cursor:pointer; border:2px solid var(--line);
+    box-shadow:none; transition:0.12s;
   }
+  .swatch.selected{
+    border-color:var(--text);
+    box-shadow:0 0 0 2px var(--bg-panel), 0 0 0 4px var(--accent2);
+  }
+  .hex-input{
+    width:100%; background:var(--bg-elevated); border:1px solid var(--line);
+    color:var(--text); padding:9px 11px; border-radius:8px;
+    font-size:12.5px; outline:none;
+  }
+  .hex-input:focus{border-color:var(--accent1);}
   .range-row{display:flex; align-items:center; gap:10px;}
   input[type=range]{
     flex:1; accent-color:var(--accent1); cursor:pointer;
@@ -339,8 +356,15 @@
       <div id="lobby-msg"></div>
 
       <div id="recentRoomsSection" style="display:none;">
-        <div class="divider">salas recentes</div>
-        <div id="recentRoomsList"></div>
+        <div class="divider">salas</div>
+        <div id="minhasSalasWrap" style="display:none;">
+          <div class="room-subheader">Minhas salas</div>
+          <div id="minhasSalasList"></div>
+        </div>
+        <div id="outrasSalasWrap" style="display:none;">
+          <div class="room-subheader">Outras salas</div>
+          <div id="outrasSalasList"></div>
+        </div>
       </div>
     </div>
 
@@ -349,15 +373,15 @@
 
       <div class="appearance-field">
         <label>Cores do gradiente</label>
-        <div class="color-row">
-          <div class="color-item">
-            <span>Principal</span>
-            <input type="color" id="corPrincipal" value="#7c5cfc">
-          </div>
-          <div class="color-item">
-            <span>Secundária</span>
-            <input type="color" id="corSecundaria" value="#22d3ee">
-          </div>
+        <div class="color-item">
+          <span>Principal</span>
+          <div class="color-swatches" id="corPrincipalSwatches"></div>
+          <input type="text" class="hex-input mono" id="corPrincipalHex" maxlength="7" placeholder="#7c5cfc">
+        </div>
+        <div class="color-item" style="margin-top:14px;">
+          <span>Secundária</span>
+          <div class="color-swatches" id="corSecundariaSwatches"></div>
+          <input type="text" class="hex-input mono" id="corSecundariaHex" maxlength="7" placeholder="#22d3ee">
         </div>
       </div>
 
@@ -405,7 +429,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getFirestore, collection, addDoc, query, orderBy,
+    getFirestore, collection, addDoc, query, orderBy, limit,
     onSnapshot, serverTimestamp, doc, setDoc, getDoc, deleteDoc
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
@@ -444,11 +468,16 @@
 
   // salas recentes
   const recentRoomsSection = document.getElementById('recentRoomsSection');
-  const recentRoomsList = document.getElementById('recentRoomsList');
+  const minhasSalasWrap = document.getElementById('minhasSalasWrap');
+  const minhasSalasList = document.getElementById('minhasSalasList');
+  const outrasSalasWrap = document.getElementById('outrasSalasWrap');
+  const outrasSalasList = document.getElementById('outrasSalasList');
 
   // aparência
-  const corPrincipalInput = document.getElementById('corPrincipal');
-  const corSecundariaInput = document.getElementById('corSecundaria');
+  const corPrincipalSwatches = document.getElementById('corPrincipalSwatches');
+  const corSecundariaSwatches = document.getElementById('corSecundariaSwatches');
+  const corPrincipalHex = document.getElementById('corPrincipalHex');
+  const corSecundariaHex = document.getElementById('corSecundariaHex');
   const opacidadeRange = document.getElementById('opacidadeRange');
   const opacidadeValue = document.getElementById('opacidadeValue');
   const borraoRange = document.getElementById('borraoRange');
@@ -552,6 +581,35 @@
   // ---------- aparência personalizável (salva só neste aparelho) ----------
   const APARENCIA_PADRAO = { accent1:'#7c5cfc', accent2:'#22d3ee', opacidade:94, borrao:8 };
   const CHAVE_APARENCIA = 'linkchat_aparencia';
+  const PALETA_CORES = [
+    '#7c5cfc', '#22d3ee', '#ff5c7a', '#3ddc97',
+    '#fbbf24', '#f97316', '#ec4899', '#38bdf8',
+    '#a78bfa', '#34d399', '#f43f5e', '#818cf8'
+  ];
+
+  function montarPaleta(container, aoEscolher){
+    container.innerHTML = '';
+    PALETA_CORES.forEach((cor)=>{
+      const sw = document.createElement('div');
+      sw.className = 'swatch';
+      sw.style.background = cor;
+      sw.dataset.cor = cor;
+      sw.addEventListener('click', ()=> aoEscolher(cor));
+      container.appendChild(sw);
+    });
+  }
+  montarPaleta(corPrincipalSwatches, (cor)=> atualizarAparencia('accent1', cor));
+  montarPaleta(corSecundariaSwatches, (cor)=> atualizarAparencia('accent2', cor));
+
+  function marcarSwatchSelecionado(container, corAtual){
+    container.querySelectorAll('.swatch').forEach((sw)=>{
+      sw.classList.toggle('selected', sw.dataset.cor.toLowerCase() === corAtual.toLowerCase());
+    });
+  }
+
+  function corHexValida(valor){
+    return /^#[0-9a-fA-F]{6}$/.test(valor);
+  }
 
   function carregarAparencia(){
     try{
@@ -571,8 +629,11 @@
     document.documentElement.style.setProperty('--panel-alpha', (config.opacidade / 100).toFixed(2));
     document.documentElement.style.setProperty('--panel-blur', config.borrao + 'px');
 
-    corPrincipalInput.value = config.accent1;
-    corSecundariaInput.value = config.accent2;
+    marcarSwatchSelecionado(corPrincipalSwatches, config.accent1);
+    marcarSwatchSelecionado(corSecundariaSwatches, config.accent2);
+    corPrincipalHex.value = config.accent1;
+    corSecundariaHex.value = config.accent2;
+
     opacidadeRange.value = config.opacidade;
     opacidadeValue.textContent = config.opacidade + '%';
     borraoRange.value = config.borrao;
@@ -594,8 +655,12 @@
     salvarAparencia(aparenciaAtual);
   }
 
-  corPrincipalInput.addEventListener('input', ()=> atualizarAparencia('accent1', corPrincipalInput.value));
-  corSecundariaInput.addEventListener('input', ()=> atualizarAparencia('accent2', corSecundariaInput.value));
+  corPrincipalHex.addEventListener('input', ()=>{
+    if(corHexValida(corPrincipalHex.value)) atualizarAparencia('accent1', corPrincipalHex.value);
+  });
+  corSecundariaHex.addEventListener('input', ()=>{
+    if(corHexValida(corSecundariaHex.value)) atualizarAparencia('accent2', corSecundariaHex.value);
+  });
   opacidadeRange.addEventListener('input', ()=> atualizarAparencia('opacidade', Number(opacidadeRange.value)));
   borraoRange.addEventListener('input', ()=> atualizarAparencia('borrao', Number(borraoRange.value)));
   resetAparenciaBtn.addEventListener('click', ()=>{
@@ -604,7 +669,7 @@
     salvarAparencia(aparenciaAtual);
   });
 
-  // ---------- salas recentes (histórico local, sem senha — o código já é a chave) ----------
+  // ---------- minhas salas (histórico local — código já é a chave, sem senha) ----------
   const CHAVE_SALAS = 'linkchat_salas_recentes';
   const MAX_SALAS_RECENTES = 8;
 
@@ -620,25 +685,44 @@
     salas.unshift({ code: code, ultimaVez: Date.now() });
     salas = salas.slice(0, MAX_SALAS_RECENTES);
     try{ localStorage.setItem(CHAVE_SALAS, JSON.stringify(salas)); }catch(e){ console.error(e); }
-    renderizarSalasRecentes();
+    renderizarListaSalas();
   }
 
   function removerSalaRecente(code){
     const salas = carregarSalasRecentes().filter(s => s.code !== code);
     try{ localStorage.setItem(CHAVE_SALAS, JSON.stringify(salas)); }catch(e){ console.error(e); }
-    renderizarSalasRecentes();
+    renderizarListaSalas();
   }
 
-  function renderizarSalasRecentes(){
-    const salas = carregarSalasRecentes();
-    if(salas.length === 0){
-      recentRoomsSection.style.display = 'none';
-      recentRoomsList.innerHTML = '';
-      return;
-    }
-    recentRoomsSection.style.display = 'block';
-    recentRoomsList.innerHTML = '';
-    salas.forEach((sala)=>{
+  // ---------- todas as salas (pública, ao vivo via Firestore) ----------
+  // qualquer sala criada por qualquer pessoa aparece aqui pra todo mundo.
+  // entrar continua exigindo o código: clicar só preenche o campo "Conectar",
+  // não entra sozinho.
+  let todasSalasPublicas = [];
+
+  function formatarQuando(timestampMillis){
+    if(!timestampMillis) return '';
+    const diffMin = Math.max(0, Math.round((Date.now() - timestampMillis) / 60000));
+    if(diffMin < 1) return 'agora';
+    if(diffMin < 60) return diffMin + 'min';
+    const diffH = Math.round(diffMin / 60);
+    if(diffH < 24) return diffH + 'h';
+    return Math.round(diffH / 24) + 'd';
+  }
+
+  function renderizarListaSalas(){
+    const minhasSalas = carregarSalasRecentes();
+    const codigosMeus = new Set(minhasSalas.map(s => s.code));
+    const outrasSalas = todasSalasPublicas.filter(s => !codigosMeus.has(s.code));
+
+    const temAlgo = minhasSalas.length > 0 || outrasSalas.length > 0;
+    recentRoomsSection.style.display = temAlgo ? 'block' : 'none';
+    if(!temAlgo) return;
+
+    // minhas salas — já conheço o código, entra direto
+    minhasSalasWrap.style.display = minhasSalas.length ? 'block' : 'none';
+    minhasSalasList.innerHTML = '';
+    minhasSalas.forEach((sala)=>{
       const item = document.createElement('div');
       item.className = 'recent-room-item';
 
@@ -660,9 +744,56 @@
       btnRemover.addEventListener('click', ()=> removerSalaRecente(sala.code));
       item.appendChild(btnRemover);
 
-      recentRoomsList.appendChild(item);
+      minhasSalasList.appendChild(item);
+    });
+
+    // outras salas — públicas, mas precisa confirmar com o código pra entrar
+    outrasSalasWrap.style.display = outrasSalas.length ? 'block' : 'none';
+    outrasSalasList.innerHTML = '';
+    outrasSalas.forEach((sala)=>{
+      const item = document.createElement('div');
+      item.className = 'recent-room-item';
+
+      const codeSpan = document.createElement('span');
+      codeSpan.className = 'code mono';
+      codeSpan.textContent = sala.code;
+      item.appendChild(codeSpan);
+
+      const quandoSpan = document.createElement('span');
+      quandoSpan.className = 'quando';
+      quandoSpan.textContent = formatarQuando(sala.criadaEm);
+      item.appendChild(quandoSpan);
+
+      const btnUsar = document.createElement('button');
+      btnUsar.className = 'btn-usar';
+      btnUsar.textContent = 'Usar código';
+      btnUsar.addEventListener('click', ()=>{
+        joinInput.value = sala.code;
+        joinInput.focus();
+        showLobbyMsg('Código preenchido. Toque em "Conectar" pra entrar.', '');
+      });
+      item.appendChild(btnUsar);
+
+      outrasSalasList.appendChild(item);
     });
   }
+
+  // escuta a coleção de salas em tempo real — assim que alguém cria uma sala
+  // nova, ela aparece pra todo mundo automaticamente
+  const salasPublicasQuery = query(collection(db, 'rooms'), orderBy('createdAt', 'desc'), limit(30));
+  onSnapshot(salasPublicasQuery, (snap)=>{
+    todasSalasPublicas = [];
+    snap.forEach((d)=>{
+      const data = d.data();
+      todasSalasPublicas.push({
+        code: d.id,
+        criadaEm: data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : null
+      });
+    });
+    renderizarListaSalas();
+  }, (error)=>{
+    console.error(error);
+  });
 
   async function entrarPorSalaRecente(code){
     if(!nomeValido()) return;
@@ -682,7 +813,7 @@
     }
   }
 
-  renderizarSalasRecentes();
+  renderizarListaSalas();
 
   function setStatus(online, text){
     statusDot.classList.toggle('online', online);
