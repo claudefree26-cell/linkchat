@@ -6,14 +6,13 @@
 <title>LinkChat</title>
 <style>
   :root{
-    --bg:#0a0d14;
-    --bg-panel:#10141f;
-    --bg-elevated:#161b29;
-    --line:#232a3d;
-    --accent1:#7c5cfc;
-    --accent2:#22d3ee;
-    --accent1-rgb:124,92,252;
-    --accent2-rgb:34,211,238;
+    --bg:#0d0f13;
+    --bg-rgb:13,15,19;
+    --bg-panel:#10131a;
+    --bg-elevated:#161a23;
+    --line:#232833;
+    --accent:#7c5cfc;
+    --accent-rgb:124,92,252;
     --text:#e7e9f0;
     --text-dim:#8890a6;
     --ok:#3ddc97;
@@ -26,10 +25,7 @@
   html,body{height:100%;}
   body{
     font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
-    background:
-      radial-gradient(circle at 15% 0%, rgba(var(--accent1-rgb),0.14), transparent 45%),
-      radial-gradient(circle at 85% 100%, rgba(var(--accent2-rgb),0.10), transparent 45%),
-      rgba(10,13,20, var(--panel-alpha));
+    background: rgba(var(--bg-rgb), var(--panel-alpha));
     backdrop-filter: blur(var(--panel-blur));
     -webkit-backdrop-filter: blur(var(--panel-blur));
     color:var(--text);
@@ -45,8 +41,8 @@
 
   .logo-dot{
     width:10px;height:10px;border-radius:50%;
-    background:linear-gradient(135deg,var(--accent1),var(--accent2));
-    box-shadow:0 0 12px rgba(var(--accent1-rgb),0.7);
+    background:var(--accent);
+    box-shadow:0 0 12px rgba(var(--accent-rgb),0.7);
   }
 
   #lobby{
@@ -55,7 +51,7 @@
   }
   .card{
     width:100%; max-width:420px;
-    background:rgba(16,20,31, var(--panel-alpha));
+    background:rgba(16,19,26, var(--panel-alpha));
     backdrop-filter: blur(var(--panel-blur));
     -webkit-backdrop-filter: blur(var(--panel-blur));
     border:1px solid var(--line);
@@ -75,8 +71,7 @@
   .id-row{display:flex; align-items:center; gap:8px;}
   .id-row .code{
     font-size:20px; font-weight:700; letter-spacing:2px;
-    background:linear-gradient(135deg,var(--accent1),var(--accent2));
-    -webkit-background-clip:text; background-clip:text; color:transparent;
+    color:var(--accent);
     flex:1; word-break:break-all;
   }
   .icon-btn{
@@ -85,7 +80,7 @@
     cursor:pointer; display:flex; align-items:center; justify-content:center;
     flex-shrink:0; transition:0.15s;
   }
-  .icon-btn:hover{border-color:var(--accent2); color:var(--accent2);}
+  .icon-btn:hover{border-color:var(--accent); color:var(--accent);}
   .divider{
     display:flex; align-items:center; gap:10px;
     color:var(--text-dim); font-size:11px; text-transform:uppercase;
@@ -97,12 +92,12 @@
     color:var(--text); padding:13px 14px; border-radius:10px; font-size:15px;
     outline:none; transition:0.15s;
   }
-  input[type=text]:focus{border-color:var(--accent1);}
+  input[type=text]:focus{border-color:var(--accent);}
   input[type=text]::placeholder{color:var(--text-dim);}
   button.primary{
     width:100%; margin-top:12px;
-    background:linear-gradient(135deg,var(--accent1),var(--accent2));
-    border:none; color:#0a0d14; font-weight:700; font-size:14px;
+    background:var(--accent);
+    border:none; color:#fff; font-weight:700; font-size:14px;
     padding:13px; border-radius:10px; cursor:pointer;
     transition:0.15s; letter-spacing:0.3px;
   }
@@ -118,30 +113,29 @@
     display:flex; align-items:center; justify-content:space-between;
     gap:0.5em; padding:0.5em 0.7em;
     border-bottom:1px solid var(--line);
-    background:rgba(16,20,31, calc(var(--panel-alpha) * 0.7));
+    background:rgba(16,19,26, calc(var(--panel-alpha) * 0.7));
     backdrop-filter: blur(var(--panel-blur));
     -webkit-backdrop-filter: blur(var(--panel-blur));
     flex-shrink:0;
   }
   #roomCodeBox{
-    display:flex; flex-direction:column; gap:1px; min-width:0; flex:1;
+    display:flex; flex-direction:column; min-width:0; flex:1;
   }
-  #roomNameLine, #roomCodeLine{
+  #roomInfoLine{
     display:flex; align-items:center; gap:0.35em; min-width:0;
   }
   #roomNameText{
     font-size:0.85rem; font-weight:700; color:var(--text);
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:10em;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:7.5em;
+    flex-shrink:1;
   }
-  #roomNameInputEdit{
-    font-size:0.85rem; font-weight:700; color:var(--text);
-    background:var(--bg-elevated); border:1px solid var(--accent1);
-    border-radius:0.4em; padding:0.1em 0.4em; outline:none;
-    max-width:10em; min-width:6em;
+  #roomInfoSep{
+    color:var(--text-dim); font-size:0.75rem; flex-shrink:0;
   }
   #roomCodeText{
     font-size:0.68rem; color:var(--text-dim);
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:9em;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:6.5em;
+    flex-shrink:1;
   }
   .copy-mini{
     width:1.9em; height:1.9em; flex-shrink:0;
@@ -149,7 +143,7 @@
     color:var(--text); border-radius:0.5em; font-size:0.85rem;
     cursor:pointer; display:flex; align-items:center; justify-content:center;
   }
-  .copy-mini:hover{border-color:var(--accent2); color:var(--accent2);}
+  .copy-mini:hover{border-color:var(--accent); color:var(--accent);}
 
   /* badge discreto: pontinho de conexão + quantos players estão na sala */
   #topInfo{
@@ -199,12 +193,12 @@
     opacity:0.85;
     letter-spacing:0.2px;
   }
-  .bubble.me .sender-name{color:rgba(10,13,20,0.65);}
-  .bubble.them .sender-name{color:var(--accent2);}
+  .bubble.me .sender-name{color:rgba(255,255,255,0.75);}
+  .bubble.them .sender-name{color:var(--accent);}
   .bubble.me{
     align-self:flex-end;
-    background:linear-gradient(135deg,var(--accent1),var(--accent2));
-    color:#0a0d14; font-weight:500;
+    background:var(--accent);
+    color:#fff; font-weight:500;
     border-bottom-right-radius:4px;
   }
   .bubble.them{
@@ -222,7 +216,7 @@
     display:flex; gap:0.6em;
     padding:0.7em;
     border-top:1px solid var(--line);
-    background:rgba(16,20,31, calc(var(--panel-alpha) * 0.75));
+    background:rgba(16,19,26, calc(var(--panel-alpha) * 0.75));
     backdrop-filter: blur(var(--panel-blur));
     -webkit-backdrop-filter: blur(var(--panel-blur));
     flex-shrink:0;
@@ -236,7 +230,7 @@
     outline:none;
     min-width:0;
   }
-  #msgInput:focus{border-color:var(--accent1);}
+  #msgInput:focus{border-color:var(--accent);}
   #sendBtn, #leaveBtn{
     width:2.6em; height:2.6em;
     font-size:1rem;
@@ -245,8 +239,8 @@
   }
   #sendBtn{
     border:none;
-    background:linear-gradient(135deg,var(--accent1),var(--accent2));
-    color:#0a0d14; cursor:pointer;
+    background:var(--accent);
+    color:#fff; cursor:pointer;
   }
   #sendBtn:hover{opacity:0.9;}
   #leaveBtn{
@@ -269,8 +263,8 @@
     font-size:12.5px; font-weight:600; cursor:pointer; transition:0.15s;
   }
   .tab-btn.active{
-    color:var(--text); border-color:var(--accent1);
-    background:rgba(var(--accent1-rgb),0.14);
+    color:var(--text); border-color:var(--accent);
+    background:rgba(var(--accent-rgb),0.14);
   }
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
@@ -286,17 +280,35 @@
     background:var(--bg-elevated); border:1px solid var(--line);
     border-radius:10px; padding:10px 12px; margin-bottom:8px;
   }
-  .recent-room-item .code{
-    flex:1; font-size:12.5px; color:var(--text);
+  .sala-info{flex:1; min-width:0;}
+  .sala-nome-row{display:flex; align-items:center; gap:6px; min-width:0;}
+  .sala-nome-row .code{
+    font-size:12.5px; color:var(--text);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  .recent-room-item button{
+  .sala-codigo-sub{
+    display:block; font-size:10px; color:var(--text-dim); margin-top:2px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .edit-sala-btn{
+    background:transparent; border:none; color:var(--text-dim);
+    cursor:pointer; font-size:12px; padding:2px; flex-shrink:0;
+    line-height:1;
+  }
+  .edit-sala-btn:hover{color:var(--accent);}
+  .sala-nome-edit-input{
+    flex:1; min-width:0; font-size:12.5px;
+    background:var(--bg-panel); border:1px solid var(--accent);
+    border-radius:6px; padding:4px 6px; color:var(--text); outline:none;
+  }
+  .recent-room-item button.btn-entrar,
+  .recent-room-item button.btn-remover{
     border:none; border-radius:7px; cursor:pointer; font-size:11.5px;
     padding:6px 10px; font-weight:700; flex-shrink:0;
   }
   .recent-room-item .btn-entrar{
-    background:linear-gradient(135deg,var(--accent1),var(--accent2));
-    color:#0a0d14;
+    background:var(--accent);
+    color:#fff;
   }
   .recent-room-item .btn-remover{
     background:transparent; color:var(--text-dim); padding:6px 8px;
@@ -316,17 +328,17 @@
   }
   .swatch.selected{
     border-color:var(--text);
-    box-shadow:0 0 0 2px var(--bg-panel), 0 0 0 4px var(--accent2);
+    box-shadow:0 0 0 2px var(--bg-panel), 0 0 0 4px var(--accent);
   }
   .hex-input{
     width:100%; background:var(--bg-elevated); border:1px solid var(--line);
     color:var(--text); padding:9px 11px; border-radius:8px;
     font-size:12.5px; outline:none;
   }
-  .hex-input:focus{border-color:var(--accent1);}
+  .hex-input:focus{border-color:var(--accent);}
   .range-row{display:flex; align-items:center; gap:10px;}
   input[type=range]{
-    flex:1; accent-color:var(--accent1); cursor:pointer;
+    flex:1; accent-color:var(--accent); cursor:pointer;
   }
   .range-value{font-size:12px; color:var(--text-dim); min-width:38px; text-align:right;}
   #resetAparenciaBtn{
@@ -381,19 +393,13 @@
     </div>
 
     <div class="tab-panel" id="tabAparencia">
-      <p class="sub">Personalize as cores e a transparência do painel. Fica salvo só neste aparelho.</p>
+      <p class="sub">Personalize a cor de destaque e a transparência do painel. Fica salvo só neste aparelho.</p>
 
       <div class="appearance-field">
-        <label>Cores do gradiente</label>
+        <label>Cor de destaque</label>
         <div class="color-item">
-          <span>Principal</span>
-          <div class="color-swatches" id="corPrincipalSwatches"></div>
-          <input type="text" class="hex-input mono" id="corPrincipalHex" maxlength="7" placeholder="#7c5cfc">
-        </div>
-        <div class="color-item" style="margin-top:14px;">
-          <span>Secundária</span>
-          <div class="color-swatches" id="corSecundariaSwatches"></div>
-          <input type="text" class="hex-input mono" id="corSecundariaHex" maxlength="7" placeholder="#22d3ee">
+          <div class="color-swatches" id="corAccentSwatches"></div>
+          <input type="text" class="hex-input mono" id="corAccentHex" maxlength="7" placeholder="#7c5cfc">
         </div>
       </div>
 
@@ -421,11 +427,9 @@
 <div id="chat">
   <div id="chatTopBar">
     <div id="roomCodeBox">
-      <div id="roomNameLine">
+      <div id="roomInfoLine">
         <span id="roomNameText" class="mono"></span>
-        <button id="editRoomNameBtn" class="copy-mini" title="Editar nome da sala">✎</button>
-      </div>
-      <div id="roomCodeLine">
+        <span id="roomInfoSep">·</span>
         <span id="roomCodeText" class="mono"></span>
         <button id="copyRoomBtn" class="copy-mini" title="Copiar código">⧉</button>
       </div>
@@ -469,7 +473,6 @@
   const nameInput = document.getElementById('nameInput');
   const roomNameInput = document.getElementById('roomNameInput');
   const roomNameText = document.getElementById('roomNameText');
-  const editRoomNameBtn = document.getElementById('editRoomNameBtn');
   const roomCodeText = document.getElementById('roomCodeText');
   const copyRoomBtn = document.getElementById('copyRoomBtn');
   const createBtn = document.getElementById('createBtn');
@@ -493,10 +496,8 @@
   const minhasSalasList = document.getElementById('minhasSalasList');
 
   // aparência
-  const corPrincipalSwatches = document.getElementById('corPrincipalSwatches');
-  const corSecundariaSwatches = document.getElementById('corSecundariaSwatches');
-  const corPrincipalHex = document.getElementById('corPrincipalHex');
-  const corSecundariaHex = document.getElementById('corSecundariaHex');
+  const corAccentSwatches = document.getElementById('corAccentSwatches');
+  const corAccentHex = document.getElementById('corAccentHex');
   const opacidadeRange = document.getElementById('opacidadeRange');
   const opacidadeValue = document.getElementById('opacidadeValue');
   const borraoRange = document.getElementById('borraoRange');
@@ -600,10 +601,11 @@
   });
 
   // ---------- aparência personalizável (salva só neste aparelho) ----------
-  const APARENCIA_PADRAO = { accent1:'#7c5cfc', accent2:'#22d3ee', opacidade:94, borrao:8 };
+  // Cor única e fixa (sem degradê, sem cor primária/secundária separadas)
+  const APARENCIA_PADRAO = { accent:'#7c5cfc', opacidade:94, borrao:8 };
   const CHAVE_APARENCIA = 'linkchat_aparencia';
   const PALETA_CORES = [
-    '#ffffff', '#000000', '#94a3b8',
+    '#ffffff', '#94a3b8', '#64748b',
     '#ef4444', '#f97316', '#f59e0b', '#eab308',
     '#84cc16', '#22c55e', '#10b981', '#14b8a6',
     '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
@@ -629,8 +631,7 @@
       container.appendChild(sw);
     });
   }
-  montarPaleta(corPrincipalSwatches, (cor)=> atualizarAparencia('accent1', cor));
-  montarPaleta(corSecundariaSwatches, (cor)=> atualizarAparencia('accent2', cor));
+  montarPaleta(corAccentSwatches, (cor)=> atualizarAparencia('accent', cor));
 
   function marcarSwatchSelecionado(container, corAtual){
     container.querySelectorAll('.swatch').forEach((sw)=>{
@@ -655,17 +656,13 @@
   }
 
   function aplicarAparencia(config){
-    document.documentElement.style.setProperty('--accent1', config.accent1);
-    document.documentElement.style.setProperty('--accent2', config.accent2);
-    document.documentElement.style.setProperty('--accent1-rgb', hexParaRgb(config.accent1));
-    document.documentElement.style.setProperty('--accent2-rgb', hexParaRgb(config.accent2));
+    document.documentElement.style.setProperty('--accent', config.accent);
+    document.documentElement.style.setProperty('--accent-rgb', hexParaRgb(config.accent));
     document.documentElement.style.setProperty('--panel-alpha', (config.opacidade / 100).toFixed(2));
     document.documentElement.style.setProperty('--panel-blur', config.borrao + 'px');
 
-    marcarSwatchSelecionado(corPrincipalSwatches, config.accent1);
-    marcarSwatchSelecionado(corSecundariaSwatches, config.accent2);
-    corPrincipalHex.value = config.accent1;
-    corSecundariaHex.value = config.accent2;
+    marcarSwatchSelecionado(corAccentSwatches, config.accent);
+    corAccentHex.value = config.accent;
 
     opacidadeRange.value = config.opacidade;
     opacidadeValue.textContent = config.opacidade + '%';
@@ -688,11 +685,8 @@
     salvarAparencia(aparenciaAtual);
   }
 
-  corPrincipalHex.addEventListener('input', ()=>{
-    if(corHexValida(corPrincipalHex.value)) atualizarAparencia('accent1', corPrincipalHex.value);
-  });
-  corSecundariaHex.addEventListener('input', ()=>{
-    if(corHexValida(corSecundariaHex.value)) atualizarAparencia('accent2', corSecundariaHex.value);
+  corAccentHex.addEventListener('input', ()=>{
+    if(corHexValida(corAccentHex.value)) atualizarAparencia('accent', corAccentHex.value);
   });
   opacidadeRange.addEventListener('input', ()=> atualizarAparencia('opacidade', Number(opacidadeRange.value)));
   borraoRange.addEventListener('input', ()=> atualizarAparencia('borrao', Number(borraoRange.value)));
@@ -743,10 +737,33 @@
     renderizarListaSalas();
   }
 
+  // atualiza o nome de uma sala no Firebase + no histórico local. Se for a
+  // sala aberta no momento, atualiza também o cabeçalho do chat.
+  async function atualizarNomeSala(code, novoNome){
+    try{
+      await setDoc(doc(db, 'rooms', code), { nome: novoNome }, { merge: true });
+      salvarSalaRecente(code, novoNome);
+      if(code === roomCode){
+        roomNomeAtual = novoNome;
+        roomNameText.textContent = novoNome || code;
+      }
+      return true;
+    }catch(e){
+      console.error(e);
+      addSystemMsgSeAberta('Não foi possível salvar o nome da sala. Verifique sua internet.');
+      return false;
+    }
+  }
+
+  function addSystemMsgSeAberta(texto){
+    if(chatEl.style.display === 'flex') addSystemMsg(texto);
+  }
+
   // ---------- minhas salas ----------
   // por segurança, só existe a lista das salas que a própria pessoa criou ou
   // entrou (salva localmente). Não há mais lista pública de todas as salas —
-  // entrar numa sala exige que alguém te repasse o código.
+  // entrar numa sala exige que alguém te repasse o código. O nome da sala é
+  // editado direto aqui na lista, não dentro da conversa.
   function renderizarListaSalas(){
     const minhasSalas = carregarSalasRecentes();
 
@@ -761,24 +778,51 @@
       item.className = 'recent-room-item';
 
       const infoWrap = document.createElement('div');
-      infoWrap.style.flex = '1';
-      infoWrap.style.minWidth = '0';
+      infoWrap.className = 'sala-info';
+
+      const nomeRow = document.createElement('div');
+      nomeRow.className = 'sala-nome-row';
 
       const nomeSpan = document.createElement('span');
       nomeSpan.className = 'code mono';
-      nomeSpan.style.display = 'block';
       nomeSpan.textContent = sala.nome || sala.code;
-      infoWrap.appendChild(nomeSpan);
+      nomeRow.appendChild(nomeSpan);
 
-      if(sala.nome){
-        const codigoSpan = document.createElement('span');
-        codigoSpan.className = 'mono';
-        codigoSpan.style.display = 'block';
-        codigoSpan.style.fontSize = '10px';
-        codigoSpan.style.color = 'var(--text-dim)';
-        codigoSpan.textContent = sala.code;
-        infoWrap.appendChild(codigoSpan);
-      }
+      const btnEditar = document.createElement('button');
+      btnEditar.className = 'edit-sala-btn';
+      btnEditar.type = 'button';
+      btnEditar.textContent = '✎';
+      btnEditar.title = 'Editar nome da sala';
+      btnEditar.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'sala-nome-edit-input mono';
+        input.maxLength = 24;
+        input.value = sala.nome || '';
+        input.placeholder = sala.code;
+        nomeRow.replaceChild(input, nomeSpan);
+        btnEditar.style.display = 'none';
+        input.focus();
+        input.select();
+
+        let jaSalvou = false;
+        function confirmar(){
+          if(jaSalvou) return;
+          jaSalvou = true;
+          atualizarNomeSala(sala.code, input.value.trim());
+        }
+        input.addEventListener('keydown', (ev)=>{ if(ev.key === 'Enter') confirmar(); });
+        input.addEventListener('blur', confirmar);
+      });
+      nomeRow.appendChild(btnEditar);
+
+      infoWrap.appendChild(nomeRow);
+
+      const codigoSpan = document.createElement('span');
+      codigoSpan.className = 'mono sala-codigo-sub';
+      codigoSpan.textContent = sala.code;
+      infoWrap.appendChild(codigoSpan);
 
       item.appendChild(infoWrap);
 
@@ -871,51 +915,6 @@
     });
   });
 
-  // ---------- editar o nome da sala direto no cabeçalho do chat ----------
-  function iniciarEdicaoNomeSala(){
-    if(!roomCode) return;
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.id = 'roomNameInputEdit';
-    input.maxLength = 24;
-    input.value = roomNomeAtual;
-    input.placeholder = roomCode;
-
-    roomNameText.replaceWith(input);
-    editRoomNameBtn.style.display = 'none';
-    input.focus();
-    input.select();
-
-    let jaSalvou = false;
-    function confirmarEdicao(){
-      if(jaSalvou) return;
-      jaSalvou = true;
-      salvarNomeDaSala(input.value.trim());
-      input.replaceWith(roomNameText);
-      editRoomNameBtn.style.display = '';
-    }
-
-    input.addEventListener('keydown', (e)=>{
-      if(e.key === 'Enter') confirmarEdicao();
-    });
-    input.addEventListener('blur', confirmarEdicao);
-  }
-
-  async function salvarNomeDaSala(novoNome){
-    if(!roomCode) return;
-    try{
-      await setDoc(doc(db, 'rooms', roomCode), { nome: novoNome }, { merge: true });
-      roomNomeAtual = novoNome;
-      roomNameText.textContent = novoNome || roomCode;
-      salvarSalaRecente(roomCode, novoNome);
-    }catch(e){
-      console.error(e);
-      addSystemMsg('Não foi possível salvar o nome da sala. Verifique sua internet.');
-    }
-  }
-
-  editRoomNameBtn.addEventListener('click', iniciarEdicaoNomeSala);
-
   joinBtn.addEventListener('click', async ()=>{
     if(!nomeValido()) return;
     const targetCode = joinInput.value.trim();
@@ -957,7 +956,7 @@
     avisarAndroidEntrouSala(code);
 
     // acompanha o nome da sala em tempo real (reflete edições feitas por
-    // qualquer uma das duas pessoas na conversa)
+    // qualquer uma das duas pessoas na conversa, inclusive pela lista de salas)
     unsubscribeRoomDoc = onSnapshot(doc(db, 'rooms', code), (snap)=>{
       const nome = snap.exists() ? (snap.data().nome || '') : '';
       roomNomeAtual = nome;
