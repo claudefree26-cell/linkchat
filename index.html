@@ -395,7 +395,7 @@
       <div id="lobby-msg"></div>
 
       <div id="recentRoomsSection" style="display:none;">
-        <div class="divider">salas</div>
+        <div class="divider" style="margin-top:4px;">salas</div>
         <div id="minhasSalasWrap" style="display:none;">
           <div class="room-subheader">Minhas salas</div>
           <div id="minhasSalasList"></div>
@@ -992,7 +992,7 @@
     roomNameInput.value = '';
     setStatus(true, 'conectado');
     messagesEl.innerHTML = '';
-    addSystemMsg('Você entrou na sala ' + code);
+    
     avisarAndroidEntrouSala(code);
 
     // acompanha o nome da sala em tempo real (reflete edições feitas por
