@@ -237,11 +237,15 @@
     min-width:0;
   }
   #msgInput:focus{border-color:var(--accent);}
-  #sendBtn, #leaveBtn{
+  #sendBtn, #leaveBtn, #resizeBtn{
     width:2.6em; height:2.6em;
     font-size:1rem;
     border-radius:50%; flex-shrink:0;
     display:flex; align-items:center; justify-content:center;
+  }
+  #resizeBtn{
+    background:var(--bg-elevated); border:1px solid var(--line);
+    color:var(--text-dim); cursor:grab; touch-action:none;
   }
  #sendBtn{
     border:none;
@@ -456,8 +460,9 @@
   <div id="composer">
     <button id="leaveBtn" title="Sair da sala">←</button>
     <input type="text" id="msgInput" placeholder="Digite uma mensagem..." autocomplete="off">
+    <button id="resizeBtn" title="Arraste para redimensionar">⤡</button>
     <button id="sendBtn">➤</button>
-  </div>
+   </div>
 </div>
 
 <script type="module">
@@ -1161,6 +1166,39 @@
       deleteDoc(doc(db, 'rooms', roomCode, 'typing', mySenderId)).catch(()=>{});
     }, 2500);
   });
+
+  // ---------- redimensionar (botão HTML, avisa o app Android) ----------
+const resizeBtn = document.getElementById('resizeBtn');
+let resizeAtivo = false;
+let resizeX = 0, resizeY = 0;
+
+function iniciarResize(x, y){
+  resizeAtivo = true;
+  resizeX = x; resizeY = y;
+}
+function moverResize(x, y){
+  if(!resizeAtivo) return;
+  const dx = x - resizeX;
+  const dy = y - resizeY;
+  resizeX = x; resizeY = y;
+  if(window.Android && typeof window.Android.onRedimensionar === 'function'){
+    try{ window.Android.onRedimensionar(dx, dy); }catch(e){}
+  }
+}
+function pararResize(){ resizeAtivo = false; }
+
+resizeBtn.addEventListener('touchstart', (e)=>{
+  const t = e.touches[0];
+  iniciarResize(t.clientX, t.clientY);
+  e.preventDefault();
+}, {passive:false});
+resizeBtn.addEventListener('touchmove', (e)=>{
+  const t = e.touches[0];
+  moverResize(t.clientX, t.clientY);
+  e.preventDefault();
+}, {passive:false});
+resizeBtn.addEventListener('touchend', pararResize);
+resizeBtn.addEventListener('touchcancel', pararResize);
 </script>
 
 </body>
