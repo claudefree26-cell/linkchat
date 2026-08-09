@@ -547,8 +547,8 @@
   // font-size da raiz. Tudo que usa rem/em escala junto automaticamente.
   function ajustarEscala(){
     const largura = document.documentElement.clientWidth || window.innerWidth;
-    const min = 170, max = 430;      // faixa de largura esperada do painel
-    const fonteMin = 10.5, fonteMax = 16; // faixa de tamanho de fonte em px
+    const min = 140, max = 430;      // faixa de largura esperada do painel
+    const fonteMin = 9, fonteMax = 16; // faixa de tamanho de fonte em px
     const w = Math.max(min, Math.min(max, largura));
     const fonte = fonteMin + (fonteMax - fonteMin) * (w - min) / (max - min);
     document.documentElement.style.fontSize = fonte.toFixed(2) + 'px';
