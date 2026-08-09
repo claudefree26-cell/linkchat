@@ -16,7 +16,7 @@
     --accent-contrast-rgb:255,255,255;
     --text:#ededed;
     --text-dim:#999999;
-    --ok:#3ddc97;
+    --ok:#1f9c63;
     --err:#ff5c7a;
     /* aparência personalizável pelo usuário (aba "Aparência") */
     --panel-alpha:0.94;
@@ -246,6 +246,7 @@
   #resizeBtn{
     background:var(--bg-elevated); border:1px solid var(--line);
     color:var(--text-dim); cursor:grab; touch-action:none;
+    line-height:1; padding-bottom:0.15em;
   }
  #sendBtn{
     border:none;
@@ -256,6 +257,7 @@
   #leaveBtn{
     background:var(--bg-elevated); border:1px solid var(--line);
     color:var(--text-dim); cursor:pointer;
+    line-height:1; padding-bottom:0.15em;
   }
 
   ::-webkit-scrollbar{width:6px;}
@@ -460,8 +462,8 @@
   <div id="composer">
     <button id="leaveBtn" title="Sair da sala">←</button>
     <input type="text" id="msgInput" placeholder="Digite uma mensagem..." autocomplete="off">
-    <button id="resizeBtn" title="Arraste para redimensionar">⤡</button>
     <button id="sendBtn">➤</button>
+    <button id="resizeBtn" title="Arraste para redimensionar">⤡</button>
    </div>
 </div>
 
